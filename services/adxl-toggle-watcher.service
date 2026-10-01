@@ -1,0 +1,17 @@
+[Unit]
+Description=Novin3dp ADXL345 include toggle watcher
+After=moonraker.service
+Wants=moonraker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/novin3dp-adxl-toggle/scripts/adxl_toggle_watcher.py
+Restart=always
+RestartSec=2
+User=__ADXL_USER__
+Environment=ADXL_USER_HOME=__ADXL_USER_HOME__
+Environment=ADXL_PRINTER_CFG=__ADXL_PRINTER_CFG__
+Environment=ADXL_BACKUP_DIR=__ADXL_BACKUP_DIR__
+
+[Install]
+WantedBy=multi-user.target

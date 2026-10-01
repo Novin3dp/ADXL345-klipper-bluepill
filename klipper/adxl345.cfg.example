@@ -1,0 +1,20 @@
+# Example ADXL345 + Blue Pill (STM32F103) config.
+# install.sh copies this to adxl345.cfg ONLY if you do not already have one,
+# and fills in __ADXL_MCU_SERIAL__ when it can detect the board.
+#
+# Wiring (Blue Pill SPI1 -> ADXL345, 3.3V ONLY):
+#   PA4 -> CS    PA5 -> SCL/SCK    PA6 -> SDO/MISO    PA7 -> SDA/MOSI
+#   3V3 -> VCC   GND -> GND
+
+[mcu adxl]
+serial: __ADXL_MCU_SERIAL__
+
+[adxl345]
+cs_pin: adxl:PA4
+spi_bus: spi1
+axes_map: x,y,z
+
+[resonance_tester]
+accel_chip: adxl345
+probe_points:
+    100, 100, 20
