@@ -58,9 +58,10 @@ cp -a "$PRINTER_CFG" "$BACKUP_DIR/printer.cfg.$(date +%Y%m%d-%H%M%S).preinstall.
 # ---- macros (separate file, included from printer.cfg) ----------------------
 log "Installing macros -> $CFG_DIR/adxl_toggle.cfg"
 cp "$PROJECT_DIR/klipper/adxl_toggle.cfg" "$CFG_DIR/adxl_toggle.cfg"
-if ! grep -qE '^\s*\[include adxl_toggle\.cfg\]' "$PRINTER_CFG"; then
-    printf '\n[include adxl_toggle.cfg]\n' >> "$PRINTER_CFG"
-fi
+# Klipper rewrites everything below "SAVE_CONFIG", so includes must go ABOVE it.
+# (This also moves lines from an older install out of the SAVE_CONFIG block.)
+python3 "$PROJECT_DIR/scripts/adxl_toggle_watcher.py" --ensure-lines "$PRINTER_CFG" \
+    "[include adxl_toggle.cfg]"
 
 # ---- adxl345.cfg (only created if missing) ----------------------------------
 if [[ ! -f "$CFG_DIR/adxl345.cfg" ]]; then
@@ -79,10 +80,9 @@ else
 fi
 
 # ---- include line (added DISABLED if absent) --------------------------------
-if ! grep -qE '^\s*#?\s*\[include adxl345\.cfg\]\s*$' "$PRINTER_CFG"; then
-    log "Adding '#[include adxl345.cfg]' (disabled) to printer.cfg"
-    printf '\n#[include adxl345.cfg]\n' >> "$PRINTER_CFG"
-fi
+log "Ensuring '[include adxl345.cfg]' exists in printer.cfg (added disabled if absent)"
+python3 "$PROJECT_DIR/scripts/adxl_toggle_watcher.py" --ensure-lines "$PRINTER_CFG" \
+    "#[include adxl345.cfg]"
 
 # ---- watcher + service ------------------------------------------------------
 log "Installing watcher service"

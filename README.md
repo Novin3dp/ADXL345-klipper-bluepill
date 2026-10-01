@@ -17,7 +17,7 @@ bash install.sh
 
 - مسیر `printer.cfg` را خودکار پیدا می‌کند (`~/printer_data/config` یا `~/klipper_config`)؛ برای مسیر دیگر: `ADXL_PRINTER_CFG=/path/printer.cfg bash install.sh`
 - قبل از هر ویرایش از `printer.cfg` بکاپ می‌گیرد (`~/adxl-toggle-backups/`)
-- ماکروها را در فایل جدا `adxl_toggle.cfg` می‌گذارد و فقط یک خط `[include adxl_toggle.cfg]` به `printer.cfg` اضافه می‌کند
+- ماکروها را در فایل جدا `adxl_toggle.cfg` می‌گذارد و فقط یک خط `[include adxl_toggle.cfg]` **قبل از بلوک `SAVE_CONFIG`** در `printer.cfg` اضافه می‌کند (Klipper هرچه بعد از آن باشد را بازنویسی می‌کند؛ خطوطی که از نصب قبلی آن پایین مانده‌اند خودکار بالا منتقل می‌شوند)
 - اگر `adxl345.cfg` ندارید، از روی قالب می‌سازد (برد Blue Pill را خودکار پیدا می‌کند؛ در غیر این صورت `ADXL_MCU_SERIAL=...` بدهید)
 - خط `#[include adxl345.cfg]` را غیرفعال اضافه می‌کند و سرویس systemd را نصب و Klipper را ری‌استارت می‌کند
 

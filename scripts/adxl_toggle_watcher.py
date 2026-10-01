@@ -45,6 +45,30 @@ POLL_INTERVAL = 0.5
 READY_TIMEOUT = 30
 
 
+SAVE_CONFIG_RE = re.compile(r"^#\*#\s*<-+\s*SAVE_CONFIG\s*-+>")
+ADXL_INCLUDE_RE = re.compile(r"^#?\s*" + re.escape(INCLUDE_LINE) + r"\s*$")
+
+
+def save_config_index(lines):
+    """Index of the SAVE_CONFIG marker line, or len(lines) if absent."""
+    for i, line in enumerate(lines):
+        if SAVE_CONFIG_RE.match(line.strip()):
+            return i
+    return len(lines)
+
+
+def insert_before_save_config(lines, new_line):
+    """Klipper rewrites everything after SAVE_CONFIG, so user lines must go before it."""
+    idx = save_config_index(lines)
+    block = [new_line + "\n"]
+    if idx < len(lines):
+        block.append("\n")  # keep a blank line before the marker
+    elif lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    lines[idx:idx] = block
+    return lines
+
+
 def http_get(url, timeout=3):
     with urllib.request.urlopen(url, timeout=timeout) as response:
         return json.load(response)
@@ -103,58 +127,63 @@ def include_is_active():
     return None  # line not present at all
 
 
+def _matcher(text):
+    if text.lstrip("#") == INCLUDE_LINE:
+        return lambda t: bool(ADXL_INCLUDE_RE.match(t))
+    return lambda t: t == text
+
+
+def normalize_lines(lines, wanted):
+    """Make sure each entry of `wanted` exists exactly once ABOVE SAVE_CONFIG.
+    A plain copy found below the marker is moved up (keeping its text, so a
+    commented include stays commented); otherwise the entry is added as given."""
+    result = list(lines)
+    for text in wanted:
+        match = _matcher(text)
+        idx = save_config_index(result)
+        head, tail = result[:idx], result[idx:]
+        moved = [l for l in tail if not l.startswith("#*#") and match(l.strip())]
+        tail = [l for l in tail if l not in moved]
+        result = head + tail
+        if any(match(l.strip()) for l in head):
+            continue
+        insert_before_save_config(result, moved[-1].strip() if moved else text)
+    return result
+
+
+def write_cfg(new_lines):
+    backup_path = backup_printer_cfg()
+    if backup_path:
+        print(f"Backed up printer.cfg -> {backup_path}", flush=True)
+    tmp_path = PRINTER_CFG + ".tmp"
+    with open(tmp_path, "w") as f:
+        f.writelines(new_lines)
+    os.replace(tmp_path, PRINTER_CFG)
+
+
 def set_include(enable):
     if not os.path.isfile(PRINTER_CFG):
         print(f"printer.cfg not found at {PRINTER_CFG}", flush=True)
         return False
 
     with open(PRINTER_CFG, "r") as f:
-        lines = f.readlines()
+        original = f.readlines()
 
-    found = False
-    changed = False
-    new_lines = []
-    for line in lines:
-        stripped = line.strip()
-        is_active = stripped == INCLUDE_LINE
-        is_commented = re.match(r"^#\s*" + re.escape(INCLUDE_LINE) + r"\s*$", stripped)
-        if is_active or is_commented:
-            found = True
-            if enable and not is_active:
-                new_lines.append(INCLUDE_LINE + "\n")
-                changed = True
-            elif not enable and is_active:
-                new_lines.append("#" + INCLUDE_LINE + "\n")
-                changed = True
-            else:
-                new_lines.append(line)
-        else:
-            new_lines.append(line)
+    present = any(ADXL_INCLUDE_RE.match(l.strip()) for l in original if not l.startswith("#*#"))
+    if not present and not enable:
+        print(f"'{INCLUDE_LINE}' not present in printer.cfg; nothing to disable.", flush=True)
+        return False
 
-    if not found:
-        # Line does not exist yet at all -- append it (commented if disabling,
-        # which would be a no-op anyway, so only append when enabling).
-        if enable:
-            if new_lines and not new_lines[-1].endswith("\n"):
-                new_lines.append("\n")
-            new_lines.append(INCLUDE_LINE + "\n")
-            changed = True
-        else:
-            print(f"'{INCLUDE_LINE}' not present in printer.cfg; nothing to disable.", flush=True)
-            return False
+    # Pull the line above SAVE_CONFIG (adds it there if missing), then toggle it.
+    lines = normalize_lines(original, [INCLUDE_LINE])
+    target = INCLUDE_LINE if enable else "#" + INCLUDE_LINE
+    lines = [target + "\n" if ADXL_INCLUDE_RE.match(l.strip()) and not l.startswith("#*#") else l
+             for l in lines]
 
-    if not changed:
+    if lines == original:
         print(f"ADXL include already {'enabled' if enable else 'disabled'}; no change.", flush=True)
         return True
-
-    backup_path = backup_printer_cfg()
-    if backup_path:
-        print(f"Backed up printer.cfg -> {backup_path}", flush=True)
-
-    tmp_path = PRINTER_CFG + ".tmp"
-    with open(tmp_path, "w") as f:
-        f.writelines(new_lines)
-    os.replace(tmp_path, PRINTER_CFG)
+    write_cfg(lines)
     return True
 
 
@@ -235,5 +264,21 @@ def main():
         time.sleep(POLL_INTERVAL)
 
 
+def ensure_lines_cli(path, lines):
+    """install.sh helper: ensure `lines` exist above SAVE_CONFIG in `path`."""
+    global PRINTER_CFG
+    PRINTER_CFG = path
+    with open(path) as f:
+        original = f.readlines()
+    updated = normalize_lines(original, lines)
+    if updated != original:
+        with open(path, "w") as f:
+            f.writelines(updated)
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 2 and sys.argv[1] == "--ensure-lines":
+        ensure_lines_cli(sys.argv[2], sys.argv[3:])
+    else:
+        main()

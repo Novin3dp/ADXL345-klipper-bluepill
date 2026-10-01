@@ -51,3 +51,50 @@ class ToggleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+SAVE = "#*# <---------------------- SAVE_CONFIG ---------------------->\n#*# DO NOT EDIT THIS BLOCK OR BELOW.\n#*#\n#*# [probe]\n#*# z_offset = 3.001\n"
+
+
+class SaveConfigTest(ToggleTest):
+    def pos(self, text):
+        c = self.read()
+        return c.index(text), c.index("SAVE_CONFIG")
+
+    def test_include_moved_above_save_config(self):
+        self.write("[mcu]\n\n" + SAVE + "\n[include adxl_toggle.cfg]\n\n#[include adxl345.cfg]\n")
+        w.ensure_lines_cli(w.PRINTER_CFG, ["[include adxl_toggle.cfg]", "#[include adxl345.cfg]"])
+        c = self.read()
+        for t in ("[include adxl_toggle.cfg]", "#[include adxl345.cfg]"):
+            self.assertEqual(c.count(t), 1)
+            i, m = self.pos(t)
+            self.assertLess(i, m)
+        self.assertIs(w.include_is_active(), False)  # stayed disabled
+
+    def test_fresh_add_goes_above_marker(self):
+        self.write("[mcu]\n" + SAVE)
+        w.ensure_lines_cli(w.PRINTER_CFG, ["[include adxl_toggle.cfg]"])
+        i, m = self.pos("[include adxl_toggle.cfg]")
+        self.assertLess(i, m)
+        self.assertIn("z_offset = 3.001", self.read())
+
+    def test_enable_below_marker_relocates(self):
+        self.write("[mcu]\n" + SAVE + "\n#[include adxl345.cfg]\n")
+        self.assertTrue(w.set_include(True))
+        i, m = self.pos("\n[include adxl345.cfg]")
+        self.assertLess(i, m)
+        self.assertEqual(self.read().count("include adxl345.cfg"), 1)
+
+    def test_enable_missing_inserts_above_marker(self):
+        self.write("[mcu]\n" + SAVE)
+        self.assertTrue(w.set_include(True))
+        i, m = self.pos("[include adxl345.cfg]")
+        self.assertLess(i, m)
+
+    def test_idempotent(self):
+        self.write("[mcu]\n[include adxl_toggle.cfg]\n#[include adxl345.cfg]\n" + SAVE)
+        before = self.read()
+        w.ensure_lines_cli(w.PRINTER_CFG, ["[include adxl_toggle.cfg]", "#[include adxl345.cfg]"])
+        self.assertEqual(before, self.read())
+
+
