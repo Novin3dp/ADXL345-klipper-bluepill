@@ -21,7 +21,7 @@ bash install.sh
 - اگر `adxl345.cfg` ندارید، از روی قالب می‌سازد (برد Blue Pill را خودکار پیدا می‌کند؛ در غیر این صورت `ADXL_MCU_SERIAL=...` بدهید)
 - خط `#[include adxl345.cfg]` را غیرفعال اضافه می‌کند و سرویس systemd را نصب و Klipper را ری‌استارت می‌کند
 
-اگر هنوز Blue Pill را فلش و سیم‌کشی نکرده‌اید: [docs/bluepill-setup.md](docs/bluepill-setup.md)
+اگر هنوز Blue Pill را فلش و سیم‌کشی نکرده‌اید: [docs/bluepill-setup.md](docs/bluepill-setup.md) — نصب بدون اینترنت: [docs/offline-install.md](docs/offline-install.md)
 
 ## استفاده
 
