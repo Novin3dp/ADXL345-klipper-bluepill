@@ -8,16 +8,39 @@
 
 ## ۲. انتقال به Pi
 
+کاربر Pi: `biqu` (پوشه‌ی home: `/home/biqu`). یکی از سه راه زیر را انجام دهید.
+
+### راه الف: فلش USB (بدون شبکه)
+
+ZIP را در ریشه‌ی فلش بریزید، فلش را به USB خود Pi بزنید، با PuTTY (آی‌پی پرینتر، پورت 22، کاربر `biqu`) وصل شوید:
+
 ```bash
-scp ADXL345-klipper-bluepill-main.zip pi@<IP-پرینتر>:~
+lsblk                                  # پارتیشن فلش را پیدا کنید، معمولاً sda1
+sudo mkdir -p /mnt/usb
+sudo mount /dev/sda1 /mnt/usb
+ls /mnt/usb                            # باید فایل ZIP دیده شود
+cp /mnt/usb/ADXL345-klipper-bluepill-main.zip /home/biqu/
+sudo umount /mnt/usb                   # سپس فلش را بکشید
 ```
 
-(یا با فلش USB کپی کنید.)
+فلش FAT32 یا exFAT باشد (NTFS ممکن است mount نشود).
 
-## ۳. استخراج
+### راه ب: pscp (همراه PuTTY)، در Command Prompt ویندوز
+
+مسیر دارای فاصله (`hello hamid`) باید داخل کوتیشن باشد:
+
+```
+pscp "C:\Users\hello hamid\Downloads\ADXL345-klipper-bluepill-main.zip" biqu@<IP-پرینتر>:/home/biqu/
+```
+
+### راه ج: WinSCP
+
+با آی‌پی پرینتر و کاربر `biqu` وصل شوید و ZIP را با drag & drop داخل `/home/biqu` بیندازید.
+
+## ۳. استخراج (در ترمینال PuTTY)
 
 ```bash
-cd ~
+cd /home/biqu
 unzip ADXL345-klipper-bluepill-main.zip     # اگر unzip نبود: python3 -m zipfile -e ADXL345-klipper-bluepill-main.zip .
 cd ADXL345-klipper-bluepill-main
 ```
@@ -35,7 +58,7 @@ ls /dev/serial/by-id/        # باید usb-Klipper_stm32f103xb_... دیده ش�
 ## ۵. نصب
 
 ```bash
-cd ~/ADXL345-klipper-bluepill-main
+cd /home/biqu/ADXL345-klipper-bluepill-main
 bash install.sh --yes
 ```
 
@@ -50,7 +73,7 @@ ADXL_PRINTER_CFG=/path/to/printer.cfg bash install.sh --yes
 
 ```bash
 systemctl status adxl-toggle-watcher.service --no-pager
-grep -n "include adxl" ~/printer_data/config/printer.cfg   # باید بالای SAVE_CONFIG باشند
+grep -n "include adxl" /home/biqu/printer_data/config/printer.cfg   # باید بالای SAVE_CONFIG باشند
 ```
 
 اگر `adxl345.cfg` را خودکار ساخته است، مقدار `serial:` داخل آن را بررسی کنید.
@@ -69,5 +92,5 @@ DISABLE_ADXL
 ## حذف
 
 ```bash
-cd ~/ADXL345-klipper-bluepill-main && bash uninstall.sh
+cd /home/biqu/ADXL345-klipper-bluepill-main && bash uninstall.sh
 ```
