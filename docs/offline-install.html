@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نصب آفلاین ADXL345 Toggle</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2563eb;--accent-soft:#e8efff;--code-bg:#0f172a;--code-text:#e2e8f0;--warn:#fff7e0;--warn-line:#f0d58a}
+@media(prefers-color-scheme:dark){:root{--bg:#0e121a;--card:#171c27;--text:#e6e9f0;--muted:#98a2b5;--line:#272f3f;--accent:#7aa2ff;--accent-soft:#1d2842;--code-bg:#090c12;--warn:#2a2412;--warn-line:#5b4d1c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.8 Tahoma,"Segoe UI",system-ui,sans-serif}
+.wrap{max-width:780px;margin:0 auto;padding:32px 16px 64px}
+header h1{font-size:1.7rem;margin:0 0 6px}
+header p{color:var(--muted);margin:0}
+.req{background:var(--accent-soft);border-radius:12px;padding:12px 16px;margin:20px 0 28px;font-size:.95rem}
+ol{list-style:none;margin:0;padding:0}
+li{display:flex;gap:14px;margin-bottom:18px;position:relative}
+li:not(:last-child)::before{content:"";position:absolute;right:17px;top:40px;bottom:-18px;width:2px;background:var(--line)}
+.num{flex:none;width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;z-index:1}
+.card{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h2{margin:0 0 4px;font-size:1.15rem}
+.sub{color:var(--muted);margin:0 0 10px;font-size:.93rem}
+p{margin:8px 0}
+code{direction:ltr;unicode-bidi:embed;background:var(--accent-soft);padding:1px 6px;border-radius:6px;font:.88em ui-monospace,Consolas,monospace}
+.code{margin:10px 0;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.code pre{width:100%}
+pre{margin:0;background:var(--code-bg);color:var(--code-text);padding:14px 16px;border-radius:10px;overflow-x:auto;text-align:left;font:.85rem/1.65 ui-monospace,Consolas,monospace}
+.copy{background:var(--accent-soft);color:var(--accent);border:0;border-radius:6px;padding:3px 10px;font:inherit;font-size:.75rem;cursor:pointer}
+.copy:hover{filter:brightness(.95)}
+.tabs{display:flex;gap:6px;margin:6px 0 10px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:8px;padding:5px 14px;font:inherit;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.note{background:var(--warn);border:1px solid var(--warn-line);border-radius:8px;padding:6px 12px;font-size:.9rem}
+.uninstall{margin-top:30px}
+.uninstall h2{font-size:1.05rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>نصب آفلاین ADXL345 Toggle</h1>
+<p>نصب روی Raspberry Pi بدون اینترنت، با PuTTY</p>
+</header>
+<div class="req"><b>پیش‌نیاز روی Pi:</b> Klipper + Moonraker، <code>python3</code> و <code>sudo</code> (روی MainsailOS به‌صورت پیش‌فرض هست). اینترنت لازم نیست.</div>
+<ol>
+<li><span class="num">1</span><div class="card"><h2>دانلود</h2><p class="sub">روی کامپیوتر دارای اینترنت</p><p>از صفحه‌ی ریپازیتوری: <b>Code ← Download ZIP</b></p><p>فایل: <code>ADXL345-klipper-bluepill-main.zip</code></p></div></li>
+<li><span class="num">2</span><div class="card"><h2>انتقال به Pi</h2><p class="sub">کاربر Pi: <code>biqu</code> — پوشه‌ی home: <code>/home/biqu</code></p><div class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-t="usb">فلش USB</button>
+  <button role="tab" aria-selected="false" data-t="pscp">pscp</button>
+  <button role="tab" aria-selected="false" data-t="winscp">WinSCP</button>
+</div>
+<div class="panel" data-p="usb">
+<p>ZIP را در ریشه‌ی فلش بریزید و فلش را به <b>USB خود Pi</b> بزنید. با PuTTY وصل شوید (آی‌پی پرینتر، پورت 22، کاربر <code>biqu</code>):</p>
+<div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">lsblk                      # find the USB partition (usually sda1)
+sudo mkdir -p /mnt/usb
+sudo mount /dev/sda1 /mnt/usb
+ls /mnt/usb                # the ZIP should be listed
+cp /mnt/usb/ADXL345-klipper-bluepill-main.zip /home/biqu/
+sudo umount /mnt/usb       # now you can unplug the drive</pre></div>
+<p class="note">فلش FAT32 یا exFAT باشد؛ NTFS ممکن است mount نشود.</p>
+</div>
+<div class="panel" data-p="pscp" hidden>
+<p>در Command Prompt ویندوز (همراه PuTTY نصب است). مسیر دارای فاصله باید داخل کوتیشن باشد:</p>
+<div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">pscp "C:\Users\hello hamid\Downloads\ADXL345-klipper-bluepill-main.zip" biqu@&lt;PRINTER-IP>:/home/biqu/</pre></div>
+</div>
+<div class="panel" data-p="winscp" hidden>
+<p>با آی‌پی پرینتر و کاربر <code>biqu</code> وصل شوید و ZIP را با drag &amp; drop داخل <code>/home/biqu</code> بیندازید.</p>
+</div></div></li>
+<li><span class="num">3</span><div class="card"><h2>استخراج</h2><p class="sub">در ترمینال PuTTY</p><div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">cd /home/biqu
+unzip ADXL345-klipper-bluepill-main.zip
+cd ADXL345-klipper-bluepill-main
+# if unzip is missing:
+# python3 -m zipfile -e ADXL345-klipper-bluepill-main.zip .</pre></div></div></li>
+<li><span class="num">4</span><div class="card"><h2>فلش Blue Pill</h2><p class="sub">فقط بار اول — سیم‌کشی و menuconfig در <code>docs/bluepill-setup.md</code></p><div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">cd ~/klipper &amp;&amp; make clean &amp;&amp; make
+# flash out/klipper.bin with ST-Link or dfu-util
+ls /dev/serial/by-id/   # expect usb-Klipper_stm32f103xb_...</pre></div></div></li>
+<li><span class="num">5</span><div class="card"><h2>نصب</h2><div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">cd /home/biqu/ADXL345-klipper-bluepill-main
+bash install.sh --yes</pre></div><p>اگر برد شناسایی نشد یا <code>printer.cfg</code> مسیر دیگری دارد:</p><div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">ADXL_MCU_SERIAL=/dev/serial/by-id/usb-Klipper_stm32f103xb_XXXX \
+ADXL_PRINTER_CFG=/path/to/printer.cfg \
+bash install.sh --yes</pre></div></div></li>
+<li><span class="num">6</span><div class="card"><h2>بررسی</h2><div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">systemctl status adxl-toggle-watcher.service --no-pager
+grep -n "include adxl" /home/biqu/printer_data/config/printer.cfg
+# both includes must be ABOVE SAVE_CONFIG</pre></div></div></li>
+<li><span class="num">7</span><div class="card"><h2>استفاده</h2><p class="sub">ابتدا سنسور را وصل کنید، سپس در Console:</p><div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">ENABLE_ADXL
+ACCELEROMETER_QUERY
+SHAPER_CALIBRATE
+DISABLE_ADXL</pre></div></div></li>
+</ol>
+<div class="card uninstall"><h2>حذف</h2><div class="code"><button class="copy" type="button">کپی</button><pre dir="ltr">cd /home/biqu/ADXL345-klipper-bluepill-main &amp;&amp; bash uninstall.sh</pre></div></div>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(function(b){b.onclick=function(){
+ var t=b.parentNode.querySelector('pre').innerText;
+ var done=function(){b.textContent='کپی شد ✓';setTimeout(function(){b.textContent='کپی'},1500)};
+ if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(done);
+ else{var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();done()}
+}});
+document.querySelectorAll('.tabs').forEach(function(tb){
+ tb.querySelectorAll('button').forEach(function(b){b.onclick=function(){
+  tb.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-selected',x===b)});
+  tb.parentNode.querySelectorAll('.panel').forEach(function(p){p.hidden=p.dataset.p!==b.dataset.t});
+ }});
+});
+</script>
+</body>
+</html>
